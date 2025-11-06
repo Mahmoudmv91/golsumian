@@ -1,4 +1,6 @@
 // lib/game_model.dart
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -42,6 +44,7 @@ class GameModel with ChangeNotifier {
   VoidCallback? onRotationStop;
 
   bool get isPaused => _isPaused;
+  Function(int points)? onPointScored;
 
   GameModel() {
     _startGame();
@@ -167,12 +170,15 @@ class GameModel with ChangeNotifier {
       _soundController.playCorrect();
       int points = answeredFast ? 3 : 1;
 
-      score += points;
-      if (score >= 100 && level < maxLevel) {
-        level++;
-        score = 0;
-      }
-      notifyListeners();
+      // بجای اضافه کردن امتیاز، انیمیشن را فعال میکنیم
+      onPointScored?.call(points);
+
+      // score += points;
+      // if (score >= 100 && level < maxLevel) {
+      //   level++;
+      //   score = 0;
+      // }
+      // notifyListeners();
 
       await Future.delayed(const Duration(milliseconds: 500));
       _resetRound();
@@ -183,6 +189,15 @@ class GameModel with ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 1500));
       _resetRound();
     }
+  }
+
+  void commitScore(int points){
+    score+= points;
+    if(score >= 100 && level < maxLevel){
+      level++;
+      score=0;
+    }
+    notifyListeners();
   }
 
   void _resetRound() async {
