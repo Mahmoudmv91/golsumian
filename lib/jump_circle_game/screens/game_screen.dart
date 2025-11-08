@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+
 import '../providers/game_provider.dart';
 import '../widgets/circle_painter_widget.dart';
 
@@ -25,19 +26,23 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late Animation<double> _rotationAnimation;
   late AnimationController _scaleController;
   late Animation<double> _scaleAnimation;
+  final GlobalKey _scoreKey = GlobalKey();
+  final GlobalKey _yesButtonKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    debugPrint("✅ Screen initState started");
 
     // ۲. تعریف انیمیشن‌ها
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _shakeAnimation = Tween<double>(begin: 0, end: 10)
-        .chain(CurveTween(curve: Curves.elasticIn))
-        .animate(_shakeController);
+    _shakeAnimation = Tween<double>(
+      begin: 0,
+      end: 10,
+    ).chain(CurveTween(curve: Curves.elasticIn)).animate(_shakeController);
 
     _jumpController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -87,6 +92,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       model.onRotationRepeat = () => _rotationController.repeat();
       model.onRotationStop = () => _rotationController.stop();
 
+      model.onPointScored = (points) {
+        _runPointsAnimation(points, Provider.of<GameModel>(context, listen: false).commitScore);
+      };
+
       // شروع انیمیشن چرخش پس‌زمینه
       _rotationController.repeat();
     });
@@ -107,7 +116,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     // ۴. دریافت مدل برای بازسازی ویجت در صورت تغییر
     final gameModel = context.watch<GameModel>();
     // ۵. دریافت مدل برای فراخوانی متدها بدون بازسازی
-    final gameModelAction = context.read<GameModel>();
+    final gameModelAction = Provider.of<GameModel>(context, listen: false);
 
     return Scaffold(
       body: AnimatedBuilder(
@@ -143,9 +152,18 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         children: [
           // دکمه‌ها و نمایشگرهای وضعیت که از gameModel استفاده می‌کنند
           const Text('Help', style: TextStyle(color: Colors.white)),
-          _buildStatusColumn('Level', '${gameModel.level}/${gameModel.maxLevel}'),
-          _buildStatusColumn('Score', '${gameModel.score}'),
-          _buildStatusColumn('Time', '1:${gameModel.timeRemaining.toString().padLeft(2, '0')}'),
+          _buildStatusColumn(
+            'Level',
+            '${gameModel.level}/${gameModel.maxLevel}',
+          ),
+          Container(
+            key: _scoreKey,
+            child: _buildStatusColumn('Score', '${gameModel.score}'),
+          ),
+          _buildStatusColumn(
+            'Time',
+            '1:${gameModel.timeRemaining.toString().padLeft(2, '0')}',
+          ),
 
           IconButton(
             icon: Icon(
@@ -273,7 +291,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: canAnswer ? () => gameModelAction.answer(false) : null,
+                onPressed: canAnswer
+                    ? () => gameModelAction.answer(false)
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
@@ -289,7 +309,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 20),
               ElevatedButton(
-                onPressed: canAnswer ? () => gameModelAction.answer(true) : null,
+                key: _yesButtonKey,
+                onPressed: canAnswer
+                    ? () => gameModelAction.answer(true)
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
@@ -309,5 +332,107 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         ],
       ),
     );
+  }
+
+  void _runPointsAnimation(int points, Function(int) onComplete) {
+    // ۱. Overlay را پیدا کنید
+    final overlay = Overlay.of(context);
+
+    // ۲. موقعیت‌ها را پیدا کنید
+    final RenderBox? scoreBox =
+        _scoreKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? buttonBox =
+        _yesButtonKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (scoreBox == null || buttonBox == null) return;
+
+    // موقعیت مرکز ویجت امتیاز
+    final scorePos = scoreBox.localToGlobal(
+      Offset(scoreBox.size.width / 2, scoreBox.size.height / 2),
+    );
+    // موقعیت بالای دکمه "Yes"
+    final buttonPos = buttonBox.localToGlobal(
+      Offset(buttonBox.size.width / 2, 0),
+    );
+
+    // ۳. کنترلر انیمیشن
+    final controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    // ۴. Tween ها (برای حرکت و محو شدن)
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeIn,
+    ); // شتاب در شروع
+    final posTween = Tween<Offset>(begin: buttonPos, end: scorePos);
+    final opacityTween = Tween<double>(begin: 1.0, end: 0.0);
+
+    // ۵. OverlayEntry
+    OverlayEntry? entry;
+    entry = OverlayEntry(
+      builder: (context) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) {
+            final pos = posTween.animate(animation).value;
+            double opacity = 1.0;
+
+            // محو شدن در 20% پایانی انیمیشن
+            if (animation.value > 0.8) {
+              opacity = opacityTween
+                  .animate(
+                    CurvedAnimation(
+                      parent: controller,
+                      curve: const Interval(0.8, 1.0),
+                    ),
+                  )
+                  .value;
+            }
+
+            return Positioned(
+              left: pos.dx - 15, // تنظیم برای مرکز حباب
+              top: pos.dy - 15, // تنظیم برای مرکز حباب
+              child: Opacity(opacity: opacity, child: child),
+            );
+          },
+          // این "حباب" ماست
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.greenAccent, // رنگ حباب
+              borderRadius: BorderRadius.circular(20),
+            ),
+            // مطمئن می‌شویم که متن استایل پیش‌فرض Material را به ارث نبرد
+            child: DefaultTextStyle(
+              style: const TextStyle(),
+              child: Text(
+                '+$points',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  decoration: TextDecoration.none, // حذف هرگونه خط زیر
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    // ۶. Listener برای اتمام انیمیشن
+    controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        entry?.remove(); // حباب را از overlay حذف کن
+        controller.dispose(); // کنترلر را آزاد کن
+        onComplete(points); // حالا امتیاز را به مدل اضافه کن
+      }
+    });
+
+    // ۷. شروع
+    overlay.insert(entry);
+    controller.forward();
   }
 }

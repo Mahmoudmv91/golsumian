@@ -209,10 +209,10 @@ class CircleGamePainter extends CustomPainter {
 
     // Draw small circle at center
     final centerCirclePaint = Paint()
-      ..color = color
+      ..color = Colors.white
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(center, 6, centerCirclePaint);
+    canvas.drawCircle(center, 20, centerCirclePaint);
   }
 
   void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {

@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:untitled1/screens/game_screen.dart';
+import 'package:untitled1/night_thief/night_thief.dart';
+
 
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  debugPrint("✅ main started");
+  runApp(
+    // MultiProvider(
+    //   providers: [ChangeNotifierProvider(create: (_) => GameModel())],
+       const MyApp(),
+    // ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,9 +25,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFF00A3CC),
       ),
-      home: const GameScreen(),
+      home: ThiefGameScreen(),
     );
   }
 }
-
-
