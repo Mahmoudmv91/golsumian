@@ -1,21 +1,26 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 class SoundController {
   final AudioPlayer _player = AudioPlayer();
 
   Future<void> playCorrect() async {
-    await _player.play(AssetSource('sounds/jump_circle_correct.mp3'));
+    _player.addAudioSource(AudioSource.asset('assets/sounds/thief_select.mp3'));
+
+    await _player.play();
   }
 
   Future<void> playWrong() async {
-    await _player.play(AssetSource('sounds/jump_circle_wrong.mp3'));
+    _player.addAudioSource(AudioSource.asset('assets/sounds/thief_select.mp3'));
+
+    await _player.play();
   }
 
   Future<void> playSound({required String path}) async {
-    await _player.play(AssetSource('sounds/$path'));
+    await _player.setAsset('assets/sounds/$path');
+    await _player.play();
   }
 
-  Future<void> playStop()async{
+  Future<void> playStop() async {
     await _player.stop();
   }
 }

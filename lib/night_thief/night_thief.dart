@@ -3,8 +3,6 @@ import 'package:just_audio/just_audio.dart';
 import 'dart:math';
 import 'dart:async';
 
-import '../jump_circle_game/controller/sound_controller.dart';
-
 class ThiefGameScreen extends StatefulWidget {
   const ThiefGameScreen({super.key});
 
@@ -14,7 +12,6 @@ class ThiefGameScreen extends StatefulWidget {
 
 class _ThiefGameScreenState extends State<ThiefGameScreen>
     with TickerProviderStateMixin {
-  final SoundController _soundController = SoundController();
   final _audioPlayer= AudioPlayer();
   int level = 1;
   int totalWindows = 9;
@@ -156,24 +153,25 @@ class _ThiefGameScreenState extends State<ThiefGameScreen>
     });
 
     if (thiefPositions.contains(index)) {
-      // _soundController.playStop();
+      _audioPlayer.stop();
       _audioPlayer.setAsset('assets/sounds/thief_select.mp3');
       _audioPlayer.play();
-      // _soundController.playSound(path: 'thief_selectt.mp3');
-      // _soundController.playSound(path: 'sounds/jump_circle_correct.mp3');
+
       setState(() {
         correctSelections++;
         score += 20;
       });
 
       if (correctSelections == thiefCount) {
-        _soundController.playStop();
-        _soundController.playSound(path: 'thief_correct.mp3');
+        _audioPlayer.stop();
+        _audioPlayer.setAsset('assets/sounds/thief_correct.mp3');
+        _audioPlayer.play();
         _showCorrectResult();
       }
     } else {
-      _soundController.playStop();
-      _soundController.playSound(path: 'thief_wrong.mp3');
+      _audioPlayer.stop();
+      _audioPlayer.setAsset('assets/sounds/thief_wrong.mp3');
+      _audioPlayer.play();
       _showWrongResult();
     }
   }
@@ -248,7 +246,8 @@ class _ThiefGameScreenState extends State<ThiefGameScreen>
 
   @override
   Widget build(BuildContext context) {
-    int crossAxisCount = totalWindows == 9 ? 3 : 4;
+    // int crossAxisCount = totalWindows == 9 ? 3 : 4;
+    int crossAxisCount = 3;
 
     return Scaffold(
       backgroundColor: Colors.blue.shade50,
@@ -352,28 +351,37 @@ class _ThiefGameScreenState extends State<ThiefGameScreen>
                   ),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.symmetric(horizontal: 10),
 
                       child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 0,
+                          mainAxisSpacing: 0,
                         ),
                         itemCount: totalWindows,
                         itemBuilder: (context, index) {
-                          return ScaleTransition(
-                            scale: windowAnimations[index],
-                            child: GestureDetector(
-                              onTap: () => _selectWindow(index),
-                              child: Center(
-                                child: Image.asset(
-                                  _getWindowImage(index),
-                                  fit: BoxFit.cover,
+                          return GestureDetector(
+                                onTap: () => _selectWindow(index),
+                                child: Center(
+                                  child: Image.asset(
+                                    _getWindowImage(index),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
+                              );
+                          // return ScaleTransition(
+                          //   scale: windowAnimations[index],
+                          //   child: GestureDetector(
+                          //     onTap: () => _selectWindow(index),
+                          //     child: Center(
+                          //       child: Image.asset(
+                          //         _getWindowImage(index),
+                          //         fit: BoxFit.cover,
+                          //       ),
+                          //     ),
+                          //   ),
+                          // );
                         },
                       ),
                     ),

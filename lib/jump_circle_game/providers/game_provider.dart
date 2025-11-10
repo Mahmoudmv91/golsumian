@@ -1,5 +1,6 @@
 // lib/game_model.dart
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'dart:math' as math;
 
 import '../controller/sound_controller.dart';
@@ -8,7 +9,8 @@ import '../controller/sound_controller.dart';
 
 
 class GameModel with ChangeNotifier {
-  final SoundController _soundController = SoundController();
+  // final SoundController _soundController = SoundController();
+  final _audioPlayer= AudioPlayer();
   static const int totalCircles = 12;
 
   // متغیرهای وضعیت
@@ -140,7 +142,10 @@ class GameModel with ChangeNotifier {
     onStopAnimations?.call();
     onShake?.call(); // اجرای انیمیشن لرزش
 
-    _soundController.playWrong();
+    // _soundController.playWrong();
+    _audioPlayer.stop();
+    _audioPlayer.setAsset('assets/sounds/jump_circle_wrong.MP3');
+    _audioPlayer.play();
 
     await Future.delayed(const Duration(milliseconds: 1500));
 
@@ -165,23 +170,24 @@ class GameModel with ChangeNotifier {
     onStopAnimations?.call();
 
     if (correct) {
-      _soundController.playCorrect();
+      // _soundController.playCorrect();
+      _audioPlayer.stop();
+      _audioPlayer.setAsset('assets/sounds/jump_circle_correct.MP3');
+      _audioPlayer.play();
       int points = answeredFast ? 3 : 1;
 
       // بجای اضافه کردن امتیاز، انیمیشن را فعال میکنیم
       onPointScored?.call(points);
 
-      // score += points;
-      // if (score >= 100 && level < maxLevel) {
-      //   level++;
-      //   score = 0;
-      // }
-      // notifyListeners();
+
 
       await Future.delayed(const Duration(milliseconds: 500));
       _resetRound();
     } else {
-      _soundController.playWrong();
+
+      _audioPlayer.stop();
+      _audioPlayer.setAsset('assets/sounds/jump_circle_wrong.MP3');
+      _audioPlayer.play();
       onShake?.call(); // اجرای انیمیشن لرزش
 
       await Future.delayed(const Duration(milliseconds: 1500));

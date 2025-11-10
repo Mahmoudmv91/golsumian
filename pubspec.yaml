@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  audioplayers: ^6.5.1
   provider: ^6.1.5+1
   just_audio: ^0.10.5
 
